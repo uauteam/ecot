@@ -50,7 +50,7 @@ func FindPage(e entity.Entity, pageQuery qry.PageQuery, results interface{})(tot
 		return
 	}
 
-	if err = db.Where(e).Count(&total).Error; err != nil {
+	if err = db.Model(e).Where(e).Count(&total).Error; err != nil {
 		return
 	}
 
