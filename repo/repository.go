@@ -1,6 +1,9 @@
 package repo
 
-import "github.com/uauteam/ecot/entity"
+import (
+	"github.com/uauteam/ecot/dto/qry"
+	"github.com/uauteam/ecot/entity"
+)
 
 func Create(e entity.Entity)(err error) {
 	db := DB(e.DBName())
@@ -34,6 +37,24 @@ func Find(e entity.Entity, results interface{})(err error) {
 		return
 	}
 
+	if err = db.Where(e).Find(results).Error; err != nil {
+		return
+	}
+
+	return
+}
+
+func FindPage(e entity.Entity, pageQuery qry.PageQuery, results interface{})(total uint, err error) {
+	db := DB(e.DBName())
+	if err = db.Error; err != nil {
+		return
+	}
+
+	if err = db.Where(e).Count(&total).Error; err != nil {
+		return
+	}
+
+	db = db.Offset(pageQuery.Page * pageQuery.Size).Limit(pageQuery.Size)
 	if err = db.Where(e).Find(results).Error; err != nil {
 		return
 	}
