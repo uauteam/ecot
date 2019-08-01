@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
-	"github.com/labstack/gommon/log"
 	err2 "github.com/uauteam/ecot/err"
+	"github.com/uauteam/ecot/log"
 	"github.com/uauteam/ecot/repo"
 	"os"
 	"path/filepath"
@@ -29,7 +29,7 @@ func New() (e *Ecot) {
 // first param configFuncHandler is a handler within returning	 a function accepting a Config parameter and returning a Config
 // second param config is the param that configFuncHandler will invoke with
 // the second param is a slice that only for variadic param, only the first item in the slice effects, other items will be discarded
-func (a *Ecot) Register(configFuncHandler func(Config) func() Config, config ...Config) (err error) {
+func (e *Ecot) Register(configFuncHandler func(Config) func() Config, config ...Config) (err error) {
 	cfg := Config{}
 	if len(config) > 0 {
 		cfg = config[0]
@@ -37,7 +37,7 @@ func (a *Ecot) Register(configFuncHandler func(Config) func() Config, config ...
 	configFunc := configFuncHandler(cfg)
 	c := configFunc()
 
-	a.Logger.Infof("init %s database", c.Name)
+	e.Logger.Infof("init %s database", c.Name)
 
 	if strings.TrimSpace(c.DBDialect) == "" {
 		return err2.DBDialectNotSet
@@ -52,20 +52,24 @@ func (a *Ecot) Register(configFuncHandler func(Config) func() Config, config ...
 		dbPath := fmt.Sprintf("%v", c.DBArgs[0])
 		dbPath = filepath.Dir(dbPath)
 		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-			e := os.MkdirAll(dbPath, 0755)
-			if e != nil {
-				return e
+			err = os.MkdirAll(dbPath, 0755)
+			if err != nil {
+				return
 			}
 		}
 	}
 
-	database, err := gorm.Open(c.DBDialect, c.DBArgs...)
+	var database *gorm.DB
+	database, err = gorm.Open(c.DBDialect, c.DBArgs...)
 	if err != nil {
 		return
 	}
+	if c.LogLevel != log.OFF {
+		database.LogMode(true)
+	}
 
-	if e := repo.RegisterDB("db_"+c.Name, database); e != nil {
-		log.Printf(e.Error())
+	if err := repo.RegisterDB("db_"+c.Name, database); err != nil {
+		e.Logger.Printf(err.Error())
 	}
 
 	if c.AutoMigrateEntityRegister != nil {
@@ -74,18 +78,18 @@ func (a *Ecot) Register(configFuncHandler func(Config) func() Config, config ...
 	}
 
 	// register service api
-	log.Printf("registering %s api", c.Name)
+	e.Logger.Printf("registering %s api", c.Name)
 	if c.ApiRegister == nil {
 		return err2.NoAPIRegistered
 	}
 
 	routeGroups := c.ApiRegister()
 	for prefix, routeGroup := range routeGroups {
-		g := a.Group(prefix)
+		g := e.Group(prefix)
 		g.Use(routeGroup.MiddlewareFunc...)
 
 		for _, route := range routeGroup.Routes {
-			log.Printf("mapping %s %s%s", route.Method, prefix, route.Path)
+			e.Logger.Printf("mapping %s %s%s", route.Method, prefix, route.Path)
 			switch route.Method {
 			case echo.POST:
 				g.POST(route.Path, route.Handler, route.MiddlewareFunc...)
@@ -98,7 +102,7 @@ func (a *Ecot) Register(configFuncHandler func(Config) func() Config, config ...
 			case echo.PATCH:
 				g.PATCH(route.Path, route.Handler, route.MiddlewareFunc...)
 			default:
-				log.Printf("HTTP method not supported: %s", route.Method)
+				e.Logger.Printf("HTTP method not supported: %s", route.Method)
 			}
 		}
 	}
