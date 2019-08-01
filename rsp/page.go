@@ -8,10 +8,10 @@ type PageResponse struct {
 	Total *uint `json:"total,omitempty"`
 }
 
-func OfPage(page, size, total uint, elements interface{})(r PageResponse) {
-	r.Page = &page
-	r.Size = &size
-	r.Total = &total
+func OfPage(page, size, total *uint, elements interface{})(r PageResponse) {
+	r.Page = page
+	r.Size = size
+	r.Total = total
 	r.Elements = elements
 	return r
 }
