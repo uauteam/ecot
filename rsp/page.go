@@ -2,10 +2,10 @@ package rsp
 
 
 type PageResponse struct {
-	Page uint
-	Size uint
-	Total uint
-	Elements interface{} `json:"elements"`
+	ListResponse
+	Page uint `json:"page"`
+	Size uint `json:"size"`
+	Total uint `json:"total"`
 }
 
 func OfPage(page, size, total uint, elements interface{})(r PageResponse) {
