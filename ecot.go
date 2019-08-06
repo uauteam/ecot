@@ -5,7 +5,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	err2 "github.com/uauteam/ecot/err"
-	"github.com/uauteam/ecot/log"
 	"github.com/uauteam/ecot/repo"
 	"os"
 	"path/filepath"
@@ -29,7 +28,7 @@ func New() (e *Ecot) {
 // first param configFuncHandler is a handler within returning	 a function accepting a Config parameter and returning a Config
 // second param config is the param that configFuncHandler will invoke with
 // the second param is a slice that only for variadic param, only the first item in the slice effects, other items will be discarded
-func (e *Ecot) Register(configFuncHandler func(Config) func() Config, config ...Config) (err error) {
+func (ecot *Ecot) Register(configFuncHandler func(Config) func() Config, config ...Config) (err error) {
 	cfg := Config{}
 	if len(config) > 0 {
 		cfg = config[0]
@@ -37,7 +36,7 @@ func (e *Ecot) Register(configFuncHandler func(Config) func() Config, config ...
 	configFunc := configFuncHandler(cfg)
 	c := configFunc()
 
-	e.Logger.Infof("init %s database", c.Name)
+	ecot.Logger.Infof("init %s database", c.Name)
 
 	if strings.TrimSpace(c.DBDialect) == "" {
 		return err2.DBDialectNotSet
@@ -52,24 +51,20 @@ func (e *Ecot) Register(configFuncHandler func(Config) func() Config, config ...
 		dbPath := fmt.Sprintf("%v", c.DBArgs[0])
 		dbPath = filepath.Dir(dbPath)
 		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-			err = os.MkdirAll(dbPath, 0755)
-			if err != nil {
-				return
+			e := os.MkdirAll(dbPath, 0755)
+			if e != nil {
+				return e
 			}
 		}
 	}
 
-	var database *gorm.DB
-	database, err = gorm.Open(c.DBDialect, c.DBArgs...)
+	database, err := gorm.Open(c.DBDialect, c.DBArgs...)
 	if err != nil {
 		return
 	}
-	if c.LogLevel != log.OFF {
-		database.LogMode(true)
-	}
 
-	if err := repo.RegisterDB("db_"+c.Name, database); err != nil {
-		e.Logger.Printf(err.Error())
+	if e := repo.RegisterDB("db_"+c.Name, database); e != nil {
+		ecot.Logger.Printf(e.Error())
 	}
 
 	if c.AutoMigrateEntityRegister != nil {
@@ -78,18 +73,18 @@ func (e *Ecot) Register(configFuncHandler func(Config) func() Config, config ...
 	}
 
 	// register service api
-	e.Logger.Printf("registering %s api", c.Name)
+	ecot.Logger.Printf("registering %s api", c.Name)
 	if c.ApiRegister == nil {
 		return err2.NoAPIRegistered
 	}
 
 	routeGroups := c.ApiRegister()
 	for prefix, routeGroup := range routeGroups {
-		g := e.Group(prefix)
+		g := ecot.Group(prefix)
 		g.Use(routeGroup.MiddlewareFunc...)
 
 		for _, route := range routeGroup.Routes {
-			e.Logger.Printf("mapping %s %s%s", route.Method, prefix, route.Path)
+			ecot.Logger.Printf("mapping %s %s%s", route.Method, prefix, route.Path)
 			switch route.Method {
 			case echo.POST:
 				g.POST(route.Path, route.Handler, route.MiddlewareFunc...)
@@ -102,7 +97,7 @@ func (e *Ecot) Register(configFuncHandler func(Config) func() Config, config ...
 			case echo.PATCH:
 				g.PATCH(route.Path, route.Handler, route.MiddlewareFunc...)
 			default:
-				e.Logger.Printf("HTTP method not supported: %s", route.Method)
+				ecot.Logger.Printf("HTTP method not supported: %s", route.Method)
 			}
 		}
 	}
