@@ -2,6 +2,6 @@ package qry
 
 
 type PageQuery struct {
-	Page uint
-	Size uint
+	Page uint `query:"page"`
+	Size uint `query:"size"`
 }
