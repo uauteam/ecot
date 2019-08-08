@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
+	"github.com/labstack/gommon/log"
 	err2 "github.com/uauteam/ecot/err"
 	"github.com/uauteam/ecot/repo"
 	"os"
@@ -61,6 +62,10 @@ func (ecot *Ecot) Register(configFuncHandler func(Config) func() Config, config 
 	database, err := gorm.Open(c.DBDialect, c.DBArgs...)
 	if err != nil {
 		return
+	}
+
+	if ecot.Logger.Level() != log.OFF {
+		database.LogMode(true)
 	}
 
 	if e := repo.RegisterDB("db_"+c.Name, database); e != nil {
