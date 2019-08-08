@@ -14,11 +14,13 @@ import (
 
 type Ecot struct {
 	*echo.Echo
+	routeGroup map[string]*echo.Group
 }
 
 func New() (e *Ecot) {
 	e = &Ecot{
 		echo.New(),
+		make(map[string]*echo.Group),
 	}
 	e.HideBanner = true
 
@@ -85,11 +87,20 @@ func (ecot *Ecot) Register(configFuncHandler func(Config) func() Config, config 
 
 	routeGroups := c.ApiRegister()
 	for prefix, routeGroup := range routeGroups {
-		g := ecot.Group(prefix)
-		g.Use(routeGroup.MiddlewareFunc...)
-
 		for _, route := range routeGroup.Routes {
-			ecot.Logger.Printf("mapping %s %s%s", route.Method, prefix, route.Path)
+			routeGroupPrefix := route.Version + prefix
+			if route.Version != "" {
+				routeGroupPrefix = "/" + routeGroupPrefix
+			}
+
+			if g, ok := ecot.routeGroup[routeGroupPrefix]; !ok {
+				g = ecot.Group(routeGroupPrefix, routeGroup.MiddlewareFunc...)
+				ecot.routeGroup[routeGroupPrefix] = g
+			}
+
+			g := ecot.routeGroup[routeGroupPrefix]
+
+			ecot.Logger.Printf("mapping %s %s%s", route.Method, routeGroupPrefix, route.Path)
 			switch route.Method {
 			case echo.POST:
 				g.POST(route.Path, route.Handler, route.MiddlewareFunc...)
