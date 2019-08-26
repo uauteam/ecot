@@ -2,6 +2,7 @@ package ecot
 
 import (
 	"fmt"
+	"github.com/go-playground/validator"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"github.com/labstack/gommon/log"
@@ -17,12 +18,22 @@ type Ecot struct {
 	routeGroup map[string]*echo.Group
 }
 
+type EcotValidator struct {
+	validator *validator.Validate
+}
+
+func (ev *EcotValidator) Validate(i interface{}) error {
+	return ev.validator.Struct(i)
+}
+
 func New() (e *Ecot) {
 	e = &Ecot{
 		echo.New(),
 		make(map[string]*echo.Group),
 	}
 	e.HideBanner = true
+
+	e.Validator = &EcotValidator{validator:validator.New()}
 
 	return
 }
