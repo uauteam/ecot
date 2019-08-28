@@ -1,11 +1,11 @@
 package ecot
 
 type Config struct {
-	Name string // Use same name for same database of projects
+	Name      string // Use same name for same database of projects
 	DBDialect string
-	DBArgs []interface{}
+	DBArgs    []interface{}
 
-	AutoMigrateEntityRegister func()[]interface{}
+	//AutoMigrateEntityRegister func() []interface{}
 
-	ApiRegister func()map[string]RouteGroup
+	//ApiRegister func() map[string]RouteGroup
 }

@@ -5,9 +5,7 @@ import (
 	"github.com/uauteam/ecot/err"
 )
 
-
 var DBMapping map[string]*gorm.DB
-
 
 func RegisterDB(dbName string, db *gorm.DB) error {
 	if DBMapping == nil {
@@ -24,7 +22,7 @@ func RegisterDB(dbName string, db *gorm.DB) error {
 	return nil
 }
 
-func DB(dbName string)*gorm.DB {
+func DB(dbName string) *gorm.DB {
 	d, ok := DBMapping[dbName]
 	if !ok {
 		d = &gorm.DB{}

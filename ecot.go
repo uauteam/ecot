@@ -33,7 +33,7 @@ func New() (e *Ecot) {
 	}
 	e.HideBanner = true
 
-	e.Validator = &EcotValidator{validator:validator.New()}
+	e.Validator = &EcotValidator{validator: validator.New()}
 
 	return
 }
@@ -42,7 +42,8 @@ func New() (e *Ecot) {
 // first param configFuncHandler is a handler within returning	 a function accepting a Config parameter and returning a Config
 // second param config is the param that configFuncHandler will invoke with
 // the second param is a slice that only for variadic param, only the first item in the slice effects, other items will be discarded
-func (ecot *Ecot) Register(configFuncHandler func(Config) func() Config, config ...Config) (err error) {
+//func (ecot *Ecot) Register(configFuncHandler func(Config) func() Config, config ...Config) (err error) {
+func (ecot *Ecot) Register(apiRegister func() map[string]RouteGroup, autoMigrateEntityRegister func() []interface{}, configFuncHandler func(Config) func() Config, config ...Config) (err error) {
 	cfg := Config{}
 	if len(config) > 0 {
 		cfg = config[0]
@@ -85,18 +86,22 @@ func (ecot *Ecot) Register(configFuncHandler func(Config) func() Config, config 
 		ecot.Logger.Printf(e.Error())
 	}
 
-	if c.AutoMigrateEntityRegister != nil {
-		entities := c.AutoMigrateEntityRegister()
+	//if c.AutoMigrateEntityRegister != nil {
+	if autoMigrateEntityRegister != nil {
+		//entities := c.AutoMigrateEntityRegister()
+		entities := autoMigrateEntityRegister()
 		database.AutoMigrate(entities...)
 	}
 
 	// register service api
 	ecot.Logger.Printf("registering %s api", c.Name)
-	if c.ApiRegister == nil {
+	//if c.ApiRegister == nil {
+	if apiRegister == nil {
 		return err2.NoAPIRegistered
 	}
 
-	routeGroups := c.ApiRegister()
+	//routeGroups := c.ApiRegister()
+	routeGroups := apiRegister()
 	for prefix, routeGroup := range routeGroups {
 		for _, route := range routeGroup.Routes {
 			routeGroupPrefix := route.Version + prefix

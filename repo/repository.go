@@ -5,7 +5,7 @@ import (
 	"github.com/uauteam/ecot/entity"
 )
 
-func Create(e entity.Entity)(err error) {
+func Create(e entity.Entity) (err error) {
 	db := DB(e.DBName())
 	if err = db.Error; err != nil {
 		return
@@ -18,7 +18,7 @@ func Create(e entity.Entity)(err error) {
 	return
 }
 
-func Get(id uint, e entity.Entity)(err error) {
+func Get(id uint, e entity.Entity) (err error) {
 	db := DB(e.DBName())
 	if err = db.Error; err != nil {
 		return
@@ -31,7 +31,7 @@ func Get(id uint, e entity.Entity)(err error) {
 	return
 }
 
-func Find(e entity.Entity, results interface{})(err error) {
+func Find(e entity.Entity, results interface{}) (err error) {
 	db := DB(e.DBName())
 	if err = db.Error; err != nil {
 		return
@@ -44,7 +44,7 @@ func Find(e entity.Entity, results interface{})(err error) {
 	return
 }
 
-func FindPage(e entity.Entity, pageQuery qry.PageQuery, results interface{})(total uint, err error) {
+func FindPage(e entity.Entity, pageQuery qry.PageQuery, results interface{}) (total uint, err error) {
 	db := DB(e.DBName())
 	if err = db.Error; err != nil {
 		return
@@ -62,14 +62,13 @@ func FindPage(e entity.Entity, pageQuery qry.PageQuery, results interface{})(tot
 	return
 }
 
-func Update(id uint, e entity.Entity)(err error) {
+func Update(id uint, e entity.Entity) (err error) {
 	db := DB(e.DBName())
 	if err = db.Error; err != nil {
 		return
 	}
 
-	if err = db.Model(e).Omit(e.ProtectedFields()...).
-		Where("id = ?", id).Updates(e).Error; err != nil {
+	if err = db.Model(e).Omit(e.ProtectedFields()...).Where("id = ?", id).Updates(e).Error; err != nil {
 		return
 	}
 
